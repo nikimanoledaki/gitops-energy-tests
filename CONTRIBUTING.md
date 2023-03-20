@@ -1,0 +1,2 @@
+## Contributing
+If you would like to contribute to this repository, please fork the repository and submit a pull request with your changes. You can also open an issue to report bugs or suggest new experimental conditions.
