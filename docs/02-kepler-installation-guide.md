@@ -60,7 +60,7 @@ kubectl apply -f _output/generated-manifest/deployment.yaml
 cd ../
 ```
 
-6. Once Kepler is deployed, verify that Kepler is working by running the following commands:
+Once Kepler is deployed, verify that Kepler is working by running the following commands:
 
 ```bash
 # get Kepler's pod name
