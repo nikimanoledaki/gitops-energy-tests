@@ -50,7 +50,18 @@ git clone https://github.com/sustainable-computing-io/kepler.git -b v0.4
 cd kepler/
 # to configure Prometheus to scrape Kepler-exporter endpoints, Kepler exporter servicemonitor object is required
 make build-manifest OPTS="PROMETHEUS_DEPLOY"
-# update the NODE_NAME to localhost in the deployment manifest when using Minikube
+```
+
+Update the value of `NODE_NAME` and the image `tag` in the deployment manifest when using Minikube
+```diff
+- valueFrom:
+-   fieldRef:
+-     fieldPath: spec.nodeName
++ value: localhost
+```
+```diff
+- image: quay.io/sustainable_computing_io/kepler:latest
++ image: quay.io/sustainable_computing_io/kepler:release-0.4
 ```
 
 Deploy Kepler v0.4 to your cluster by running the following command:
