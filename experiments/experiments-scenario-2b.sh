@@ -31,7 +31,7 @@ git push --set-upstream origin main
 echo "Deploy guestbook application with Flux CD"
 
 # Create a source from a public Git repository master branch
-flux create source git guestbook \
+flux create source git example-apps \
   --namespace=flux-system \
   --url=https://github.com/$github_username/example-apps \
   --branch=master \
@@ -41,7 +41,7 @@ flux create source git guestbook \
 flux create helmrelease guestbook \
   --namespace=flux-system \
   --release-name=guestbook \
-  --source=GitRepository/guestbook.flux-system \
+  --source=GitRepository/example-apps.flux-system \
   --chart=./helm-guestbook \
   --target-namespace=guestbook-fluxcd \
   --create-target-namespace=true \
@@ -49,18 +49,11 @@ flux create helmrelease guestbook \
 
 echo "Deploy podinfo application with Flux CD"
 
-# Create a source from a public Git repository master branch
-flux create source git podinfo \
-  --namespace=flux-system \
-  --url=https://github.com/$github_username/example-apps \
-  --branch=master \
-  --interval=180s
-
 # Create a HelmRelease with a chart from a GitRepository source
 flux create helmrelease podinfo \
   --namespace=flux-system \
   --release-name=podinfo \
-  --source=GitRepository/podinfo.flux-system \
+  --source=GitRepository/example-apps.flux-system \
   --chart=./charts/podinfo \
   --target-namespace=podinfo-fluxcd \
   --create-target-namespace=true \
@@ -104,9 +97,8 @@ sleep 15m
 
 echo "Clean up"
 flux delete helmrelease guestbook --silent
-flux delete source git guestbook --silent
 flux delete helmrelease podinfo --silent
-flux delete source git podinfo --silent
+flux delete source git example-apps --silent
 kubectl delete namespace guestbook-fluxcd
 kubectl delete namespace podinfo-fluxcd
 gh repo delete $github_username/example-apps --yes
