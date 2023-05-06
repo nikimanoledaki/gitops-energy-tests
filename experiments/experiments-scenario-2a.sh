@@ -77,7 +77,7 @@ sed -i 's/appVersion:.*/appVersion: 0.2.0/' helm-guestbook/Chart.yaml
 sed -i 's/tag:.*/tag: 6.3.5/' podinfo/values.yaml
 sed -i 's/version:.*/version: 6.3.5/' podinfo/Chart.yaml
 sed -i 's/appVersion:.*/appVersion: 6.3.5/' podinfo/Chart.yaml
-git .
+git add .
 git commit -m "Perform a rolling update"
 git push
 
@@ -90,9 +90,9 @@ echo "Perform a rollback"
 sed -i 's/tag: .*/tag: 0.1/' helm-guestbook/values.yaml
 sed -i 's/version: .*/version: 0.1.0/' helm-guestbook/Chart.yaml
 sed -i 's/appVersion:.*/appVersion: 0.1.0/' helm-guestbook/Chart.yaml
-sed -i 's/tag:.*/tag: 6.3.4/' charts/podinfo/values.yaml
-sed -i 's/version:.*/version: 6.3.4/' charts/podinfo/Chart.yaml
-sed -i 's/appVersion:.*/appVersion: 6.3.4/' charts/podinfo/Chart.yaml
+sed -i 's/tag:.*/tag: 6.3.4/' podinfo/values.yaml
+sed -i 's/version:.*/version: 6.3.4/' podinfo/Chart.yaml
+sed -i 's/appVersion:.*/appVersion: 6.3.4/' podinfo/Chart.yaml
 git add .
 git commit -m "Rollback to a previous version"
 git push
@@ -106,10 +106,30 @@ argocd app delete guestbook --yes
 argocd app delete podinfo --yes
 kubectl delete namespace guestbook-argocd
 kubectl delete namespace podinfo-argocd
+kubectl delete -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl delete namespace argocd
 gh repo delete $github_username/example-apps --yes
 rm -R -f example-apps
+rm -R -f podinfo
+rm -R -f argocd-example-apps
 
 echo "Starting with Multirepo scenario ..."
+
+echo "Re-installing Argo CD"
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# Keep Argo CD in idle state for 15 minutes
+sleep 15m
+
+# Start a port-forward in another window
+kubectl port-forward svc/argocd-server -n argocd 8080:443 &
+
+# Get the initial password
+password=$(argocd admin initial-password -n argocd | head -n 1 | awk '{print $NF}')
+
+# Login to ArgoCD
+argocd login localhost:8080 --insecure --username=admin --password=$password
 
 # Fork the following repository https://github.com/argoproj/argocd-example-apps
 gh repo fork https://github.com/argoproj/argocd-example-apps.git --clone --default-branch-only

@@ -11,8 +11,6 @@ echo "Create a git repo to host two Helm charts"
 git clone https://github.com/stefanprodan/podinfo.git
 git clone https://github.com/argoproj/argocd-example-apps.git
 
-export github_username=$(gh api user --jq .login)
-
 # Create a new repository named example-apps
 mkdir example-apps
 cd example-apps
@@ -34,7 +32,7 @@ echo "Deploy guestbook application with Flux CD"
 flux create source git example-apps \
   --namespace=flux-system \
   --url=https://github.com/$github_username/example-apps \
-  --branch=master \
+  --branch=main \
   --interval=180s
 
 # Create a HelmRelease with a chart from a GitRepository source
@@ -54,7 +52,7 @@ flux create helmrelease podinfo \
   --namespace=flux-system \
   --release-name=podinfo \
   --source=GitRepository/example-apps.flux-system \
-  --chart=./charts/podinfo \
+  --chart=./podinfo \
   --target-namespace=podinfo-fluxcd \
   --create-target-namespace=true \
   --interval=180s
@@ -71,7 +69,7 @@ sed -i 's/appVersion:.*/appVersion: 0.2.0/' helm-guestbook/Chart.yaml
 sed -i 's/tag:.*/tag: 6.3.5/' podinfo/values.yaml
 sed -i 's/version:.*/version: 6.3.5/' podinfo/Chart.yaml
 sed -i 's/appVersion:.*/appVersion: 6.3.5/' podinfo/Chart.yaml
-git .
+git add helm-guestbook/ podinfo/
 git commit -m "Perform a rolling update"
 git push
 
@@ -84,10 +82,10 @@ echo "Perform a rollback"
 sed -i 's/tag: .*/tag: 0.1/' helm-guestbook/values.yaml
 sed -i 's/version: .*/version: 0.1.0/' helm-guestbook/Chart.yaml
 sed -i 's/appVersion:.*/appVersion: 0.1.0/' helm-guestbook/Chart.yaml
-sed -i 's/tag:.*/tag: 6.3.4/' charts/podinfo/values.yaml
-sed -i 's/version:.*/version: 6.3.4/' charts/podinfo/Chart.yaml
-sed -i 's/appVersion:.*/appVersion: 6.3.4/' charts/podinfo/Chart.yaml
-git add .
+sed -i 's/tag:.*/tag: 6.3.4/' podinfo/values.yaml
+sed -i 's/version:.*/version: 6.3.4/' podinfo/Chart.yaml
+sed -i 's/appVersion:.*/appVersion: 6.3.4/' podinfo/Chart.yaml
+git add helm-guestbook/ podinfo/
 git commit -m "Rollback to a previous version"
 git push
 cd ..
@@ -103,8 +101,21 @@ kubectl delete namespace guestbook-fluxcd
 kubectl delete namespace podinfo-fluxcd
 gh repo delete $github_username/example-apps --yes
 rm -R -f example-apps
+rm -R -f podinfo
+rm -R -f argocd-example-apps
 
 echo "Starting with Multirepo scenario ..."
+
+echo "Re-installing Flux"
+flux bootstrap github \
+  --owner=$github_username \
+  --repository=gitops-energy-tests \
+  --path=clusters/my-cluster \
+  --private=false \
+  --personal=true
+
+# Keep Argo CD in idle state for 15 minutes
+sleep 15m
 
 # Fork the following repository https://github.com/argoproj/argocd-example-apps
 gh repo fork https://github.com/argoproj/argocd-example-apps.git --clone --default-branch-only
